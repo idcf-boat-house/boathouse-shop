@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: #{DEPLOY_K8S_NAMESPACE_TEST}#
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-frontend/client:#{env.BRANCH_NAME}#-#{env.BUILD_ID}#
+        name: client
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      

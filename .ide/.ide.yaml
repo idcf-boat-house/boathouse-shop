@@ -1,0 +1,28 @@
+version: smartide/v0.2
+orchestrator:
+  type: allinone
+  version: 3
+workspace:
+  dev-container:
+    service-name: boathouse-dev
+    ports: # 申明端口
+      tools-webide-vscode: 6800
+      tools-ssh: 6822
+      tools-phpmyadmin: 8090
+      apps-boathouse-frontend: 4000
+      apps-boathouse-backend: 8080
+    
+    ide-type: vscode
+    volumes: 
+      git-config: true
+      ssh-key: true
+    command:
+      - cd /home/project
+      - mvn package -Dmaven.test.skip=true
+      - code --install-extension vscjava.vscode-java-pack
+      - code --install-extension ms-azuretools.vscode-docker
+      - cd /home/project && cd src/boat-house-frontend/src/management && npm config set registry https://registry.npmmirror.com && npm install && npm run build
+      - cd /home/project && cd .ide/ && docker compose -f docker-compose-debug.yml up -d
+
+  kube-deploy-files: "k8s-deployment-vmlc.yaml" 
+  docker-compose-file: "docker-compose-vmlc.yaml"

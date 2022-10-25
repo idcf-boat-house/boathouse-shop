@@ -1,0 +1,241 @@
+// -------------------------------------
+// baot house backend jenkinsfile
+// -------------------------------------
+
+def getHost() {
+  def remote = [:]
+  remote.name = 'server-dev'
+  remote.host = "${BOATHOUSE_DEV_HOST}"
+  remote.user = "${env.CREDS_DEV_SERVER_USR}"
+  remote.password = "${env.CREDS_DEV_SERVER_PSW}"
+  remote.port = 22
+  remote.allowAnyHosts = true
+  return remote
+}
+
+pipeline {
+    // 
+    agent 
+    { 
+        label 'vm-slave' 
+    }
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '10')
+    }
+    environment {
+      CREDS_GITHUB_REGISTRY = credentials('creds-github-registry')
+      CREDS_DEV_SERVER = credentials('creds-dev-server')
+      TOKEN_SONARQUBE	 = credentials('token_sonarqube')
+      SONAR_ARGS="-Dsonar.projectKey=sonar-dev-lxm -Dsonar.host.url=http://tools-sonar.boat-house.cn -Dsonar.login=${TOKEN_SONARQUBE} -Dsonar.sources=src/main -Dsonar.tests=src/test"
+      def server=''
+    }
+
+    stages {
+
+        // 
+        stage('before-build'){
+          steps {
+            sh "printenv"
+          }
+        }
+
+        // 构建
+        stage('build') {
+          // 多个并行的任务，全部通过才能进入下一个 阶段（stage）
+          parallel {
+
+            // 统计服务打包
+            stage('build-statistics-service') {
+              steps {
+                sh 'mvn clean cobertura:cobertura'
+
+                echo "docker build..."
+                sh "docker build -f src/statistics-service/api/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest src/statistics-service/api"
+                sh "docker build -f src/statistics-service/worker/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest src/statistics-service/worker"
+
+                echo "docker login..."
+                sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+
+                echo "push service api..."
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+
+                echo "push service worker..."
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
+              }
+              post {
+                success {
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                }
+              }
+            }
+
+            // 产品服务打包
+            stage('build-product-service') {
+              steps {
+                //sh 'mvn clean cobertura:cobertura'
+
+                echo "docker-compose restart..."
+                sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product stop"
+                sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product up"
+
+                // junit
+                echo "junit..."
+                junit 'src/product-service/api/target/surefire-reports/**/TEST-*.xml'
+
+              
+                echo "docker build..."
+                sh "docker build -f src/product-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest src/product-service/api"
+
+                echo "docker login..."
+                sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+
+                // push
+                echo "push service api..."
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+
+                // publish Junit Report
+                echo "Publish Junit Report..."
+                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: './src/product-service/api/target/site/jacoco-it', reportFiles: 'index.html', reportName: 'Junit Report', reportTitles: ''])
+              }
+              post {
+                success {
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                }
+              }
+            }
+            
+            // 用户信息服务器打包
+            stage('build-account-service') {
+              steps {
+                echo "docker-compose restart..."
+                sh "docker-compose -f src/account-service/api/docker-compose.build.yaml -p api_account stop"
+                sh "docker-compose -f src/account-service/api/docker-compose.build.yaml -p api_account up"
+
+                // junit
+                // echo "junit..."
+                // junit 'src/account-service/api/target/surefire-reports/**/TEST-*.xml'
+                // publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: './src/account-service/api/target/site/jacoco-it', reportFiles: 'index.html', reportName: 'Junit Report', reportTitles: ''])
+
+                // Requires Cobertura plugin to archive and display converage report
+                // https://plugins.jenkins.io/cobertura/
+             
+              
+                echo "docker build..."
+                sh "docker build -f src/account-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest src/account-service/api"
+                
+                echo "docker login..."
+                sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+
+                // push
+                echo "push service api..."
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+              }
+              post {
+                success {
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                }
+              }
+            }
+          }
+        }
+
+        // dev 环境
+        stage('deploy-dev') { 
+            steps {
+              sh "sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g' src/docker-compose-template.yaml"
+              sh "sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g' src/docker-compose-template.yaml"
+              script {
+                server = getHost()
+                echo "copy docker-compose file to remote server..."       
+                sshRemove remote: server, path: "./docker-compose-template.yaml"   // 先删除远程服务器上的文件，已确保是最新的文件
+                sshPut remote: server, from: 'src/docker-compose-template.yaml', into: '.'
+                sshCommand remote: server, command: "mkdir -p src/product-service/api/scripts"
+                sshPut remote: server, from: 'src/product-service/api/scripts/init.sql', into: './src/product-service/api/scripts/init.sql'
+
+                echo "create docker network..."       
+                sshCommand remote: server, command: "docker network ls|grep backend > /dev/null || docker network create --driver bridge backend"
+                sshCommand remote: server, command: "docker network ls|grep frontend > /dev/null || docker network create --driver bridge frontend"
+
+                // 下面的 docker-compose-template.yaml 已经复制到根目录下，不用再调整
+                echo "stopping previous docker containers..."       
+                sshCommand remote: server, command: "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-backend down"
+                
+                echo "pulling newest docker images..."
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-backend pull"
+                
+                echo "restarting new docker containers..."
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-backend up -d"
+                
+                echo "successfully started!..."
+              }
+            }
+        }
+ 
+        // 基于dev环境进行jmeter测试
+        stage('Jmeter') {
+          steps {
+            script{
+                echo "waitting for the sevice up..."
+                sleep 80
+                sh "ls -al ./test/jmeter"
+                sh "cd test/jmeter && find . -name '*.log' -delete"
+                sh "rm -R ./test/jmeter/output || exit 0"
+                sh "mkdir ./test/jmeter/output"
+                sh "docker run --interactive --rm --volume `pwd`/test/jmeter:/jmeter egaillardon/jmeter --nongui --testfile boat-house.jmx --logfile output/result.jtl -Jdomain=${BOATHOUSE_DEV_HOST} -e -o ./output --systemproperty jmeterengine.force.system.exit=true"
+                sh "ls -al ./test/jmeter"
+                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: './test/jmeter/output', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
+            }
+          }
+        }
+
+        // 测试环境部署
+        stage('deploy-test') {
+            steps {
+                timeout(5) {
+                    input message: '是否部署到测试环境?', ok: '是', submitter: 'admin'
+                }
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g'"
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g'"
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{env.BRANCH_NAME}#-#{env.BUILD_ID}#/${env.BRANCH_NAME}-${env.BUILD_ID}/g'"
+                sh "find devops/kompose/test -name *.yaml | xargs sed -i 's/#{DEPLOY_K8S_NAMESPACE_TEST}#/${DEPLOY_K8S_NAMESPACE_TEST}/g'"
+                kubernetesDeploy configs: 'devops/kompose/test/*', deleteResource: false, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-test', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+            }
+        }
+
+        // 生产环境部署
+        stage('deploy-production') { 
+            steps {
+                timeout(5) {
+                    input message: '是否部署到生产环境?', ok: '是', submitter: 'admin'
+                }
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g'"
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g'"
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{env.BRANCH_NAME}#-#{env.BUILD_ID}#/${env.BRANCH_NAME}-${env.BUILD_ID}/g'"
+                sh "find devops/kompose/prod -name *.yaml | xargs sed -i 's/#{DEPLOY_K8S_NAMESPACE_PROD}#/${DEPLOY_K8S_NAMESPACE_PROD}/g'"
+                kubernetesDeploy configs: 'devops/kompose/prod/*', deleteResource: false, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-prod', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+            }
+        }
+
+    }
+
+    post {
+      always {
+        sh "sudo git clean -fdx"
+
+        sh "docker rmi \$(docker images | grep none | awk '{print \$3}')"
+        //sh "sudo rm -rf src/product-service/api/target"
+        //sh "sudo rm -rf src/account-service/api/target"
+      }
+    }
+  }

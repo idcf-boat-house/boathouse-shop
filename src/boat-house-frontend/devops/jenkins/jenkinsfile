@@ -1,0 +1,148 @@
+// -------------------------------------
+// 前端 静态页 jenkinsfile
+// -------------------------------------
+
+def getHost() {
+  def remote = [:]
+  remote.name = 'server-dev'
+  remote.host = "${BOATHOUSE_DEV_HOST}"
+  remote.user = "${env.CREDS_DEV_SERVER_USR}"
+  remote.password = "${env.CREDS_DEV_SERVER_PSW}"
+  remote.port = 22
+  remote.allowAnyHosts = true
+  return remote
+}
+
+pipeline {
+    agent
+    { 
+        label 'vm-slave' 
+    }
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '10')
+    }
+    environment {
+      CREDS_GITHUB_REGISTRY = credentials('creds-github-registry')
+      CREDS_DEV_SERVER = credentials('creds-dev-server')
+      def server=''
+    }
+
+    // 阶段配置
+    stages {
+
+        // 构建准备 
+        stage('before-build'){
+          steps {
+            sh "printenv"
+          }
+        }
+
+        // 构建
+        stage('build') {
+          parallel {
+            // 用户界面
+            stage('build-client') {
+              steps {
+                sh "docker build -f src/client/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:latest src/client"
+                sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:${env.BRANCH_NAME}-${env.BUILD_ID}"
+              }
+            }
+
+            // 管理界面
+            stage('build-management') {
+              steps {
+                sh "docker build -f src/management/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:latest src/management"
+                sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:${env.BRANCH_NAME}-${env.BUILD_ID}"
+              }
+            }
+
+          }
+        }
+
+        // dev
+        stage('deploy-dev') { 
+            steps {
+              sh "sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g' src/docker-compose-template.yaml"
+              sh "sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g' src/docker-compose-template.yaml"
+              script {
+                server = getHost()
+              
+                echo "copy docker-compose file to remote server...."    
+                sshRemove remote: server, path: "./docker-compose-template.yaml"   // 先删除
+                sshPut remote: server, from: 'src/docker-compose-template.yaml', into: '.'
+              /*    sshCommand remote: server, command: "mkdir -p src/product-service/api/scripts"
+                sshPut remote: server, from: 'src/product-service/api/scripts/init.sql', into: './src/product-service/api/scripts/init.sql'
+                */
+
+                echo "create network...."       
+                sshCommand remote: server, command: "docker network ls|grep backend > /dev/null || docker network create --driver bridge backend"
+                sshCommand remote: server, command: "docker network ls|grep frontend > /dev/null || docker network create --driver bridge frontend"
+
+                // 下面的 docker-compose-template.yaml 已经复制到根目录下，不用再调整
+                echo "stopping previous docker containers...."       
+                sshCommand remote: server, command: "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-frontend down"
+                
+                echo "pulling newest docker images..."
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-frontend pull"
+                
+                echo "restarting new docker containers...."
+                sshCommand remote: server, command: "docker-compose -f docker-compose-template.yaml -p boat-house-frontend up -d"
+
+                echo "successfully started!"
+              }
+            }
+        } 
+
+        stage('build-uitest'){
+            steps {
+                sh "docker build -f test/selenium/dotnet-uitest/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/uitest:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/uitest:latest test/selenium/dotnet-uitest"
+            }
+        }
+        
+
+        // 测试环境部署
+        stage('deploy-k8s-test') {
+            steps {
+                timeout(10) {
+                    input message: '是否部署到测试环境?', ok: '是', submitter: 'admin'
+                }
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g'"
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g'"
+                sh "find devops/kompose/test -name *-deployment.yaml | xargs sed -i 's/#{env.BRANCH_NAME}#-#{env.BUILD_ID}#/${env.BRANCH_NAME}-${env.BUILD_ID}/g'"
+                sh "find devops/kompose/test -name *.yaml | xargs sed -i 's/#{DEPLOY_K8S_NAMESPACE_TEST}#/${DEPLOY_K8S_NAMESPACE_TEST}/g'"
+                //kubernetesDeploy configs: 'devops/kompose/test/client-deployment.yaml,devops/kompose/test/management-deployment.yaml', deleteResource: true, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-dev', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+                kubernetesDeploy configs: 'devops/kompose/test/*', deleteResource: false, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-test', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+
+            }
+        }
+
+        // 生产环境部署
+        stage('deploy-k8s-production') { 
+            steps {
+                timeout(5) {
+                    input message: '是否部署到生产环境?', ok: '是', submitter: 'admin'
+                }
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g'"
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g'"
+                sh "find devops/kompose/prod -name *-deployment.yaml | xargs sed -i 's/#{env.BRANCH_NAME}#-#{env.BUILD_ID}#/${env.BRANCH_NAME}-${env.BUILD_ID}/g'"
+                sh "find devops/kompose/prod -name *.yaml | xargs sed -i 's/#{DEPLOY_K8S_NAMESPACE_PROD}#/${DEPLOY_K8S_NAMESPACE_PROD}/g'"
+                //kubernetesDeploy configs: 'devops/kompose/prod/client-deployment.yaml,devops/kompose/prod/management-deployment.yaml', deleteResource: true, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-prod', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+                kubernetesDeploy configs: 'devops/kompose/prod/*', deleteResource: false, kubeConfig: [path: ''], kubeconfigId: 'creds-test-k8s', secretName: 'regcred', secretNamespace: 'boathouse-prod', ssh: [sshCredentialsId: '*', sshServer: ''], textCredentials: [certificateAuthorityData: '', clientCertificateData: '', clientKeyData: '', serverUrl: 'https://']
+            }
+        }
+
+    } 
+
+   /*   post {
+      always {
+      
+        sh "sudo rm -rf *"
+        
+      }
+    }*/
+  }

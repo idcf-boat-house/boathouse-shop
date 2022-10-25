@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statistics-service-db-deployment
+  namespace: #{DEPLOY_K8S_NAMESPACE_PROD}#
+
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: statistics-service-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: statistics-service-db
+    spec:
+      containers:
+      - image: postgres:9.4
+        name: statistics-service-db
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+      restartPolicy: Always
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always

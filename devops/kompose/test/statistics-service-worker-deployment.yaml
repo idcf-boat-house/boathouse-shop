@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statistics-service-worker-deployment
+  namespace: #{DEPLOY_K8S_NAMESPACE_TEST}#
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: statistics-service-worker
+  template:
+    metadata:
+      labels:
+        app: statistics-service-worker
+    spec:
+      containers:
+      - image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-backend/statistics_service_worker:#{env.BRANCH_NAME}#-#{env.BUILD_ID}#
+        name: worker
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always

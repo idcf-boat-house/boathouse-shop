@@ -1,0 +1,23 @@
+
+imageRepository: bhacr.azurecr.cn/idcf-boat-house/boat-house-frontend
+imageNamePrefix: ''
+imageTag: master-86
+imagePullSecrets: []
+
+services:
+  - client
+  - management 
+
+serviceProfiles:
+  - name: client
+    imageName: client
+    replicas: 1
+    svcType: LoadBalancer
+    appPort: 8080
+    svcPort: 80
+  - name: management
+    imageName: management
+    replicas: 1
+    svcType: LoadBalancer
+    appPort: 4000
+    svcPort: 80 

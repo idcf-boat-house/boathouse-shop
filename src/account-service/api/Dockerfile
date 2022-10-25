@@ -7,5 +7,5 @@ RUN mvn package && mvn cobertura:cobertura
 
 FROM openjdk:8-jre-alpine
 WORKDIR /app
-COPY --from=MAVEN_BUILD /build/target/account-service-0.0.1-SNAPSHOT.jar /app/
-ENTRYPOINT ["java", "-jar", "account-service-0.0.1-SNAPSHOT.jar"]
+COPY --from=MAVEN_BUILD /build/target/boathouse-account-service-0.0.1-SNAPSHOT.jar /app/
+ENTRYPOINT ["java", "-jar", "boathouse-account-service-0.0.1-SNAPSHOT.jar"]

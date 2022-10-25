@@ -1,4 +1,4 @@
-FROM maven:3.5.2-jdk-8-alpine AS MAVEN_BUILD
+FROM maven:3.8.6-jdk-8 AS MAVEN_BUILD
 MAINTAINER leansoftx
 COPY pom.xml /build/
 COPY src /build/src/

@@ -18,6 +18,9 @@ io.set('transports', ['polling'])
 
 var port = process.env.PORT || 4000
 
+var product_service_url = 'http://product-service-api:8080'
+var account_service_url = 'http://account-service-api:8080'
+
 io.sockets.on('connection', function (socket) {
   socket.emit('message', { text: 'Welcome!' })
 
@@ -98,7 +101,7 @@ server.listen(port, function () {
 
 app.get('/api/foodcategories', function (req, res) {
   requestify
-    .get('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/FoodCategories')
+    .get(product_service_url + '/api/v1.0/BoatHouse/FoodCategories')
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -108,7 +111,7 @@ app.get('/api/foodcategories', function (req, res) {
 app.post('/api/foodcategory', function (req, res) {
   requestify
     .post(
-      'https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/FoodCategory',
+      product_service_url + '/api/v1.0/BoatHouse/FoodCategory',
       req.body
     )
     .then(function (response) {
@@ -120,7 +123,7 @@ app.post('/api/foodcategory', function (req, res) {
 app.put('/api/foodcategory', function (req, res) {
   requestify
     .put(
-      'https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/FoodCategory',
+      product_service_url + '/api/v1.0/BoatHouse/FoodCategory',
       req.body
     )
     .then(function (response) {
@@ -132,7 +135,7 @@ app.put('/api/foodcategory', function (req, res) {
 app.delete('/api/foodcategory', function (req, res) {
   requestify
     .delete(
-      'https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/FoodCategory?id=' +
+      product_service_url + '/api/v1.0/BoatHouse/FoodCategory?id=' +
         req.query.id
     )
     .then(function (response) {
@@ -143,7 +146,7 @@ app.delete('/api/foodcategory', function (req, res) {
 
 app.get('/api/foods', function (req, res) {
   requestify
-    .get('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Foods')
+    .get(product_service_url + '/api/v1.0/BoatHouse/Foods')
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -153,7 +156,7 @@ app.get('/api/foods', function (req, res) {
 app.get('/api/food', function (req, res) {
   requestify
     .get(
-      'https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Food?id=' +
+      product_service_url + '/api/v1.0/BoatHouse/Food?id=' +
         req.query.id
     )
     .then(function (response) {
@@ -166,7 +169,7 @@ app.post('/api/food', function (req, res) {
   var form = new multiparty.Form()
   form.parse(req, function (err, fields, files) {
     // var postForm = new FormData();
-    let url = `https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Food?菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}`
+    let url = product_service_url + `/api/v1.0/BoatHouse/Food?菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}`
     if (files['菜品图片'] !== undefined) {
       var tempPath = files['菜品图片'][0].path
       var tempFileNameList = tempPath.split('/')
@@ -176,7 +179,7 @@ app.post('/api/food', function (req, res) {
       let dbPath = './foods/' + tempFileName
       let outFile = fs.createWriteStream(outFilePath)
       nodeFile.pipe(outFile)
-      url = `https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Food?菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}&菜品图片=${dbPath}`
+      url = `http://product-service-api:8080/api/v1.0/BoatHouse/Food?菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}&菜品图片=${dbPath}`
     }
     axios
       .post(encodeURI(url))
@@ -193,7 +196,7 @@ app.post('/api/food', function (req, res) {
 app.put('/api/food', function (req, res) {
   var form = new multiparty.Form()
   form.parse(req, function (err, fields, files) {
-    let url = `https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Food?菜品ID=${fields['菜品ID'][0]}&菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}`
+    let url = product_service_url + `/api/v1.0/BoatHouse/Food?菜品ID=${fields['菜品ID'][0]}&菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}`
     if (files['菜品图片'] !== undefined) {
       var tempPath = files['菜品图片'][0].path
       var tempFileNameList = tempPath.split('/')
@@ -203,7 +206,7 @@ app.put('/api/food', function (req, res) {
       let dbPath = './foods/' + tempFileName
       let outFile = fs.createWriteStream(outFilePath)
       nodeFile.pipe(outFile)
-      url = `https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/BoatHouse/Food?菜品ID=${fields['菜品ID'][0]}&菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}&&菜品图片=${dbPath}`
+      url = product_service_url + `/api/v1.0/BoatHouse/Food?菜品ID=${fields['菜品ID'][0]}&菜品分类ID=${fields['菜品分类ID'][0]}&菜品名称=${fields['菜品名称'][0]}&菜品价格=${fields['菜品价格'][0]}&菜品描述=${fields['菜品描述'][0]}&&菜品图片=${dbPath}`
     }
 
     axios
@@ -221,7 +224,7 @@ app.put('/api/food', function (req, res) {
 app.delete('/api/food', function (req, res) {
   requestify
     .delete(
-      'http://product-service-api:8080/api/v1.0/BoatHouse/Food?id=' +
+      product_service_url + '/api/v1.0/BoatHouse/Food?id=' +
         req.query.id
     )
     .then(function (response) {
@@ -232,7 +235,7 @@ app.delete('/api/food', function (req, res) {
 
 app.get('/join/list', function (req, res) {
   requestify
-    .get('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn:8080/api/v1.0/join/list')
+    .get(product_service_url + '/api/v1.0/join/list')
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -241,7 +244,7 @@ app.get('/join/list', function (req, res) {
 
 app.get('/api/users', function (req, res) {
   requestify
-    .get('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn:8080/api/v1.0/user/')
+    .get(account_service_url + '/api/v1.0/user/')
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -250,7 +253,7 @@ app.get('/api/users', function (req, res) {
 
 app.get('/api/user', function (req, res) {
   requestify
-    .get('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/user/' + req.query.id)
+    .get(account_service_url + '/api/v1.0/user/' + req.query.id)
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -260,7 +263,7 @@ app.get('/api/user', function (req, res) {
 app.post('/api/user', function (req, res) {
   requestify
     .post(
-      'https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/user/',
+      account_service_url + '/api/v1.0/user/',
       req.body
     )
     .then(function (response) {
@@ -272,7 +275,7 @@ app.post('/api/user', function (req, res) {
 app.put('/api/user', function (req, res) {
   requestify
     .put(
-      'http://account-service-api:8080/api/v1.0/user/',
+      account_service_url + '/api/v1.0/user/',
       req.body
     )
     .then(function (response) {
@@ -283,7 +286,7 @@ app.put('/api/user', function (req, res) {
 
 app.delete('/api/user', function (req, res) {
   requestify
-    .delete('https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/user/delete/' + req.query.id)
+    .delete(account_service_url + '/api/v1.0/user/delete/' + req.query.id)
     .then(function (response) {
       console.log(response.body)
       return res.send(response.body)
@@ -292,7 +295,7 @@ app.delete('/api/user', function (req, res) {
 
 app.get("/orders/pending", function(req, res) {
   requestify
-    .get("https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/orders/pending")
+    .get("http://product-service-api:8080/api/v1.0/orders/pending")
     .then(function(response) {
       console.log(response.body);
       return res.send(response.body);
@@ -301,7 +304,7 @@ app.get("/orders/pending", function(req, res) {
 
 app.put("/orders/confirm", function(req, res) {
   requestify
-    .put("https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/orders/confirm", req.body)
+    .put("http://product-service-api:8080/api/v1.0/orders/confirm", req.body)
     .then(function(response) {
       console.log(response.body);
       return res.send(response.body);
@@ -328,7 +331,7 @@ app.get("/api/intro/intro_page", function(req, res) {
 
 app.post("/api/intro/intro_page", function(req, res) {
   requestify
-    .put("https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/intro/intro_page", req.body)
+    .put("http://product-service-api:8080/api/v1.0/intro/intro_page", req.body)
     .then(function(response) {
       console.log(response.body);
       return res.send(response.body);
@@ -337,7 +340,7 @@ app.post("/api/intro/intro_page", function(req, res) {
 
 app.put("/api/intro/intro_page", function(req, res) {
   requestify
-    .put("https://ro7jb2-boathouse-dev-p8080.ws-test.smartide.cn/api/v1.0/intro/intro_page", req.body)
+    .put("http://product-service-api:8080/api/v1.0/intro/intro_page", req.body)
     .then(function(response) {
       console.log(response.body);
       return res.send(response.body);

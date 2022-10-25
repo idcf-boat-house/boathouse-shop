@@ -47,7 +47,7 @@ pipeline {
             // 统计服务打包
             stage('build-statistics-service') {
               steps {
-                sh 'mvn clean cobertura:cobertura'
+                // sh 'mvn clean cobertura:cobertura'
 
                 echo "docker build..."
                 sh "docker build -f src/statistics-service/api/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest src/statistics-service/api"

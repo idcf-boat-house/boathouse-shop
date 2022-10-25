@@ -6,4 +6,4 @@ services:
     volumes:
       - ../../../:/build
     working_dir: /build/src/account-service/api
-    command: bash -c "mvn package && mvn cobertura:cobertura"
+    command: bash -c "mvn clean package spring-boot:repackage && mvn cobertura:cobertura"

@@ -66,9 +66,10 @@ pipeline {
         // dev
         stage('deploy-dev') { 
             steps {
+              echo "begin repalce docker-compose variables"    
               sh "sed -i 's/#{BOATHOUSE_CONTAINER_REGISTRY}#/${BOATHOUSE_CONTAINER_REGISTRY}/g' src/boat-house-frontend/src/docker-compose-template.yaml"
               sh "sed -i 's/#{BOATHOUSE_ORG_NAME}#/${BOATHOUSE_ORG_NAME}/g' src/boat-house-frontend/src/docker-compose-template.yaml"
-              
+              echo "end repalce docker-compose variables"    
               script {
                 server = getHost()
               

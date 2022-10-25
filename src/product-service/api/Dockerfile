@@ -3,7 +3,7 @@ MAINTAINER leansoftx
 COPY pom.xml /build/
 COPY src /build/src/
 WORKDIR /build/
-RUN mvn package -Dmaven.test.skip=true
+RUN mvn clean package spring-boot:repackage -Dmaven.test.skip=true
 
 FROM openjdk:8-jre-alpine
 WORKDIR /app

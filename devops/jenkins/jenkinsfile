@@ -82,7 +82,8 @@ pipeline {
 
                 echo "docker-compose restart..."
                 sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product stop"
-                sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product up"
+                sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product up -d"
+                sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product stop"
 
                 // junit
                 echo "junit..."

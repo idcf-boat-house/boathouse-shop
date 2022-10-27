@@ -1,8 +1,23 @@
 version: '3'
 
 services:
+  product-service-db:
+    container_name: product-service-db
+    command:
+      - --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: P2ssw0rd
+    image: mysql:5.6
+    ports:
+      - "3306"
+    restart: always
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+
   product-service-api-ci:
     image: maven:3.8.6-jdk-8
+    depends_on: 
+      - product-service-db
     volumes:
       - ../../../:/build
     working_dir: /build/src/product-service/api

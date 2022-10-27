@@ -58,7 +58,7 @@ public class OrdersMapperTest {
             orders.setUpdateTime(new Date());
             orders.setTotalAmount(new BigDecimal("90.23"));
             orders.setUserId(19);
-            ordersMapper.insert(orders);
+            //ordersMapper.insert(orders);
         }
     }
 

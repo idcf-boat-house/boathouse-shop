@@ -101,8 +101,8 @@ pipeline {
                 sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
 
                 // publish Junit Report
-                echo "Publish Junit Report..."
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: './src/product-service/api/target/site/jacoco-it', reportFiles: 'index.html', reportName: 'Junit Report', reportTitles: ''])
+                //echo "Publish Junit Report..."
+                //publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: './src/product-service/api/target/site/jacoco-it', reportFiles: 'index.html', reportName: 'Junit Report', reportTitles: ''])
               }
               post {
                 success {

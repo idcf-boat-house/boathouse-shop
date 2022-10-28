@@ -50,27 +50,27 @@ pipeline {
                 // sh 'mvn clean cobertura:cobertura'
 
                 echo "docker build..."
-                sh "docker build -f src/statistics-service/api/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest src/statistics-service/api"
-                sh "docker build -f src/statistics-service/worker/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest src/statistics-service/worker"
+                sh "docker build -f src/statistics-service/api/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:latest src/statistics-service/api"
+                sh "docker build -f src/statistics-service/worker/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:latest src/statistics-service/worker"
 
                 echo "docker login..."
                 sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
 
                 echo "push service api..."
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
 
                 echo "push service worker..."
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
               }
               post {
                 success {
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:latest"
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
 
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:latest"
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/statistics_service_worker:${env.BRANCH_NAME}-${env.BUILD_ID}"
                 }
               }
             }
@@ -85,20 +85,20 @@ pipeline {
                 sh "docker-compose -f src/product-service/api/docker-compose.build.yaml -p api_product up"
 
                 // junit
-                //echo "junit..."
-                //junit 'src/product-service/api/target/surefire-reports/**/TEST-*.xml'
+                // echo "junit..."
+                // junit 'src/product-service/api/target/surefire-reports/**/TEST-*.xml'
 
               
                 echo "docker build..."
-                sh "docker build -f src/product-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest src/product-service/api"
+                sh "docker build -f src/product-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:latest src/product-service/api"
 
                 echo "docker login..."
                 sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
 
                 // push
                 echo "push service api..."
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
 
                 // publish Junit Report
                 //echo "Publish Junit Report..."
@@ -106,8 +106,8 @@ pipeline {
               }
               post {
                 success {
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:latest"
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/product_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
                 }
               }
             }
@@ -129,20 +129,20 @@ pipeline {
              
               
                 echo "docker build..."
-                sh "docker build -f src/account-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest src/account-service/api"
+                sh "docker build -f src/account-service/api/Dockerfile.image -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:latest src/account-service/api"
                 
                 echo "docker login..."
                 sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
 
                 // push
                 echo "push service api..."
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
               }
               post {
                 success {
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:latest"
-                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-backend/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:latest"
+                  sh "docker rmi ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/account_service_api:${env.BRANCH_NAME}-${env.BUILD_ID}"
                 }
               }
             }

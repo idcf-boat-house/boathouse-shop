@@ -43,20 +43,20 @@ pipeline {
             // 用户界面
             stage('build-client') {
               steps {
-                sh "docker build -f src/boat-house-frontend/src/client/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:latest src/boat-house-frontend/src/client"
+                sh "docker build -f src/boat-house-frontend/src/client/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/client:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/client:latest src/boat-house-frontend/src/client"
                 sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/client:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/client:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/client:${env.BRANCH_NAME}-${env.BUILD_ID}"
               }
             }
 
             // 管理界面
             stage('build-management') {
               steps {
-                sh "docker build -f src/boat-house-frontend/src/management/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:latest src/boat-house-frontend/src/management"
+                sh "docker build -f src/boat-house-frontend/src/management/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/management:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/management:latest src/boat-house-frontend/src/management"
                 sh "docker login ${BOATHOUSE_CONTAINER_REGISTRY} -u ${CREDS_GITHUB_REGISTRY_USR} -p ${CREDS_GITHUB_REGISTRY_PSW}"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:latest"
-                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/management:${env.BRANCH_NAME}-${env.BUILD_ID}"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/management:latest"
+                sh "docker push ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/management:${env.BRANCH_NAME}-${env.BUILD_ID}"
               }
             }
 
@@ -102,7 +102,7 @@ pipeline {
 
         stage('build-uitest'){
             steps {
-                sh "docker build -f src/boat-house-frontend/test/selenium/dotnet-uitest/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/uitest:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/boat-house-frontend/uitest:latest test/selenium/dotnet-uitest"
+                sh "docker build -f src/boat-house-frontend/test/selenium/dotnet-uitest/Dockerfile -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/uitest:${env.BRANCH_NAME}-${env.BUILD_ID} -t ${BOATHOUSE_CONTAINER_REGISTRY}/${BOATHOUSE_ORG_NAME}/uitest:latest test/selenium/dotnet-uitest"
             }
         }
         

@@ -70,7 +70,7 @@ public class OrderItemsMapperTest {
         item.setFoodPrice(new BigDecimal("23.00"));
         item.setOrderId(orderId);
         item.setFoodSubTotal(item.getFoodPrice().multiply(new BigDecimal(item.getFoodNum())));
-        orderItemsMapper.insert(item);
+        //orderItemsMapper.insert(item);
     }
 
     @Test
@@ -83,7 +83,7 @@ public class OrderItemsMapperTest {
             if (item.getFoodNum() == 0) {
                 item.setFoodNum(1);
                 item.setFoodSubTotal(item.getFoodPrice().multiply(new BigDecimal(item.getFoodNum())));
-                orderItemsMapper.updateById(item);
+                //orderItemsMapper.updateById(item);
             }
         }
     }

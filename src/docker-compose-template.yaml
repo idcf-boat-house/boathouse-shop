@@ -2,7 +2,7 @@ version: "3"
 services:
 
     statistics-service-api:
-        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-backend/statistics_service_api:latest
+        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/statistics_service_api:latest
         restart: always
         # ports:
         #    - 6001:80  # 无需暴露端口到外网
@@ -11,7 +11,7 @@ services:
             - backend
 
     statistics-service-worker:
-        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-backend/statistics_service_worker:latest
+        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/statistics_service_worker:latest
         restart: always
         networks:
             - frontend
@@ -36,7 +36,7 @@ services:
             - backend
 
     product-service-api:
-        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-backend/product_service_api:latest
+        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/product_service_api:latest
         restart: always
         ports:
             - 7001:8080
@@ -45,7 +45,7 @@ services:
             - backend
 
     account-service-api:
-        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/boat-house-backend/account_service_api:latest
+        image: #{BOATHOUSE_CONTAINER_REGISTRY}#/#{BOATHOUSE_ORG_NAME}#/account_service_api:latest
         restart: always
         ports:
             - 7002:8080
